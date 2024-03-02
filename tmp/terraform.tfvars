@@ -1,0 +1,2 @@
+project     = "tastylog"
+enviroment = "dev"
