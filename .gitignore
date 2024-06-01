@@ -1,4 +1,4 @@
 .\computer\.terraform
 .\S3.terraform
 .\EC2\.terraform
-.\.terraform
+.terraform
