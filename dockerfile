@@ -1,17 +1,8 @@
-FROM golang:alpine
-MAINTAINER "HashiCorp Terraform Team <terraform@hashicorp.com>"
+FROM amazon/aws-cli:latest
 
-ENV TERRAFORM_VERSION=0.10.0
+RUN yum update -y
+RUN yum install -y unzip jq tar gzip
+RUN curl  -OL https://releases.hashicorp.com/terraform/1.3.4/terraform_1.3.4_linux_amd64.zip
+RUN unzip terraform_1.3.4_linux_amd64.zip -d /bin
 
-RUN apk add --update git bash openssh
-
-ENV TF_DEV=true
-ENV TF_RELEASE=true
-
-WORKDIR $GOPATH/src/github.com/hashicorp/terraform
-RUN git clone https://github.com/hashicorp/terraform.git ./ && \
-    git checkout v${TERRAFORM_VERSION} && \
-    /bin/bash scripts/build.sh
-
-WORKDIR $GOPATH
-ENTRYPOINT ["terraform"]
+ENTRYPOINT ["/bin/bash"]
