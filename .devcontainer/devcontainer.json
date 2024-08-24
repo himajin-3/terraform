@@ -7,8 +7,14 @@
 		"context": "..",
 		// Update the 'dockerFile' property if you aren't using the standard 'Dockerfile' filename.
 		"dockerfile": "../dockerfile"
-	}
-
+	},
+	// "mounts": [
+	// "source=${localEnv:HOME}${localEnv:USERPROFILE}/.aws/,target=/home/node/.aws/,type=bind,consistency=cached"
+	// ]
+	"mounts": [
+		"source=/home/kengo/.aws/credentials,target=/root/.aws/credentials,type=bind,consistency=cached",
+		"source=/home/kengo/.aws/config,target=/root/.aws/config,type=bind,consistency=cached"
+	]
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
 
