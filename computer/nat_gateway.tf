@@ -16,3 +16,4 @@ resource "aws_eip" "nat" {
     Name = "nat-eip"
   }
 }
+
