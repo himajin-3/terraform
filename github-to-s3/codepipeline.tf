@@ -89,7 +89,9 @@ resource "aws_codepipeline" "my_pipeline" {
       }
     }
   }
+}
 
+/*
   # S3にデプロイするステージ
   stage {
     name = "Deploy"
@@ -109,9 +111,9 @@ resource "aws_codepipeline" "my_pipeline" {
       }
     }
 
-    # 動的にアクションを定義する（Lambda関数ごとに個別のZIPファイルをデプロイ）
+    # 動的にアクションを定義する（Lambda関数ごとのZIPファイルをデプロイ）
     dynamic "action" {
-      for_each = fileset("tmp", "*.zip")  # 正しいファイルパスを参照
+      for_each = fileset("/tmp", "*.zip")  # ビルドフェーズで生成されたZIPファイルを取得
       content {
         name             = "S3_Deploy_${basename(action.value)}"
         category         = "Deploy"
@@ -128,3 +130,4 @@ resource "aws_codepipeline" "my_pipeline" {
     }
   }
 }
+*/

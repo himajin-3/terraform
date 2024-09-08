@@ -9,18 +9,19 @@ phases:
 
   build:
     commands:
-      - echo "Building Lambda functions..."
-      - mkdir -p /tmp  # /tmpディレクトリを作成 (ビルド環境における標準的な一時ディレクトリ)
+      - echo "Displaying folder list..."
+      - ls -l ${GITHUB_REPO}  # クローン後のフォルダリストを表示
+      - mkdir -p /tmp  # /tmpディレクトリを作成
+      - echo "Zipping Lambda functions..."
       - |
-        for function_path in ./${GITHUB_REPO}/*; do
-          if [ -d "$function_path" ]; then
-            function_name=$(basename "$function_path")
-            echo "Building $function_name..."
-            cd "$function_path" && zip -r "/tmp/${function_name}.zip" . && cd ../..
-          fi
+        for function_path in $(ls -d ${GITHUB_REPO}/*/); do  # ディレクトリごとにループ
+          function_name=$(basename "$function_path")
+          echo "Zipping $function_name..."
+          zip -r "/tmp/${function_name}.zip" "$function_path"
+          aws s3 cp "/tmp/${function_name}.zip" "s3://lambda-kamiguchi/"
         done
 
 artifacts:
   files:
-    - '/tmp/*.zip'  # /tmpディレクトリ内のすべてのZIPファイルをアーティファクトとして出力
+    - '/tmp/*.zip'  # /tmpディレクトリ内の全てのZIPファイルをアーティファクトとして出力
   discard-paths: no
