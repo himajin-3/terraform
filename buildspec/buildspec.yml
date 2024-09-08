@@ -17,7 +17,7 @@ phases:
         for function_path in $(ls -d ${GITHUB_REPO}/*/); do  # ディレクトリごとにループ
           function_name=$(basename "$function_path")
           echo "Zipping $function_name..."
-          zip -r "/tmp/${function_name}.zip" "$function_path"
+          zip -jr "/tmp/${function_name}.zip" "$function_path"
           aws s3 cp "/tmp/${function_name}.zip" "s3://lambda-kamiguchi/"
         done
 
