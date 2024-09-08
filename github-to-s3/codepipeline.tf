@@ -43,7 +43,6 @@ resource "aws_codebuild_project" "build_project" {
   }
 }
 
-# CodePipelineの作成
 resource "aws_codepipeline" "my_pipeline" {
   name     = "github-to-s3-pipeline"
   role_arn = module.codepipeline_iam_role.role_arn
@@ -92,29 +91,12 @@ resource "aws_codepipeline" "my_pipeline" {
   }
 
   # S3にデプロイするステージ
-stage {
-  name = "Deploy"
+  stage {
+    name = "Deploy"
 
-  # デフォルトの静的なアクションブロック
-  action {
-    name             = "S3_Deploy_Default"
-    category         = "Deploy"
-    owner            = "AWS"
-    provider         = "S3"
-    version          = "1"
-    input_artifacts  = ["build_output"]
-    configuration = {
-      BucketName  = aws_s3_bucket.codepipeline_deploy.bucket
-      Extract     = "false"
-      ObjectKey   = "default.zip"  # デフォルトのS3オブジェクトキー
-    }
-  }
-
-  # 動的にアクションを定義する
-  dynamic "action" {
-    for_each = { for function in fileset("./lambda_functions", "*.zip") : function => function }
-    content {
-      name             = "S3_Deploy_${function.key}"
+    # 静的なアクションを1つ定義（エラー回避のために必要）
+    action {
+      name             = "S3_Deploy_Default"
       category         = "Deploy"
       owner            = "AWS"
       provider         = "S3"
@@ -123,9 +105,26 @@ stage {
       configuration = {
         BucketName  = aws_s3_bucket.codepipeline_deploy.bucket
         Extract     = "false"
-        ObjectKey   = "${function.key}.zip"  # Lambda関数名に基づいたZIPファイル名をS3にアップロード
+        ObjectKey   = "default.zip"
+      }
+    }
+
+    # 動的にアクションを定義する（Lambda関数ごとに個別のZIPファイルをデプロイ）
+    dynamic "action" {
+      for_each = fileset("tmp", "*.zip")  # 正しいファイルパスを参照
+      content {
+        name             = "S3_Deploy_${basename(action.value)}"
+        category         = "Deploy"
+        owner            = "AWS"
+        provider         = "S3"
+        version          = "1"
+        input_artifacts  = ["build_output"]
+        configuration = {
+          BucketName  = aws_s3_bucket.codepipeline_deploy.bucket
+          Extract     = "false"
+          ObjectKey   = "${basename(action.value)}.zip"
+        }
       }
     }
   }
-}
 }

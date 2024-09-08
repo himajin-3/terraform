@@ -6,16 +6,21 @@ phases:
       - echo "Installing dependencies..."
       - echo "Cloning GitHub repository..."
       - git clone https://${GITHUB_TOKEN}@github.com/${GITHUB_OWNER}/${GITHUB_REPO}.git
+
   build:
     commands:
       - echo "Building Lambda functions..."
+      - mkdir -p /tmp  # /tmpディレクトリを作成 (ビルド環境における標準的な一時ディレクトリ)
       - |
-        for function_path in ./${GITHUB_REPO}/lambda_functions/*; do
-          function_name=$(basename "$function_path")
-          echo "Building $function_name..."
-          cd "$function_path" && zip -r "../../$function_name.zip" . && cd ../..
+        for function_path in ./${GITHUB_REPO}/*; do
+          if [ -d "$function_path" ]; then
+            function_name=$(basename "$function_path")
+            echo "Building $function_name..."
+            cd "$function_path" && zip -r "/tmp/${function_name}.zip" . && cd ../..
+          fi
         done
 
 artifacts:
   files:
-    - '*.zip'  # すべてのZIPファイルをアーティファクトとして出力
+    - '/tmp/*.zip'  # /tmpディレクトリ内のすべてのZIPファイルをアーティファクトとして出力
+  discard-paths: no
