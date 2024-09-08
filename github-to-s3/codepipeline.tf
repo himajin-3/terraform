@@ -1,17 +1,17 @@
 provider "aws" {
-  region = "us-east-1"
+  region = "ap-northeast-1"
 }
 
 # S3バケットの作成 (デプロイ先)
 resource "aws_s3_bucket" "codepipeline_deploy" {
-  bucket = "my-app-deploy-bucket"
+  bucket = "lambda-kamiguchi"
 }
 
 
 # CodeBuildプロジェクトの作成（ビルドステージが必要な場合）
 resource "aws_codebuild_project" "build_project" {
   name          = "s3-deploy-build"
-  service_role  = module.codepipeline_iam_role.role_arn
+  service_role  = module.codebuild_iam_role.role_arn
 
   artifacts {
     type = "CODEPIPELINE"
@@ -25,7 +25,7 @@ resource "aws_codebuild_project" "build_project" {
 
   source {
     type      = "CODEPIPELINE"
-    #buildspec = file("buildspec.yml")  # ビルドプロセスが必要な場合
+    buildspec = file("../buildspec/buildspec.yml")  # ビルドプロセスが必要な場合
   }
 }
 
@@ -94,3 +94,4 @@ resource "aws_codepipeline" "my_pipeline" {
     }
   }
 }
+
