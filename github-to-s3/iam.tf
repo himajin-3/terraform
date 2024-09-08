@@ -1,4 +1,5 @@
 # Lambda用IAMロールの作成
+/*
 module "lambda_iam_role" {
   source = "../modules/iam_role"
 
@@ -11,7 +12,7 @@ module "lambda_iam_role" {
     "s3:GetObject"
   ]
 }
-
+*/
 # CodePipeline用IAMロールの作成
 module "codepipeline_iam_role" {
   source = "../modules/iam_role"

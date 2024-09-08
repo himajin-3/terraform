@@ -2,13 +2,12 @@ provider "aws" {
   region = "ap-northeast-1"
 }
 
-# S3バケットの作成 (デプロイ先)
+# S3バケットの作成（デプロイ先）
 resource "aws_s3_bucket" "codepipeline_deploy" {
   bucket = "lambda-kamiguchi"
 }
 
-
-# CodeBuildプロジェクトの作成（ビルドステージが必要な場合）
+# CodeBuildプロジェクトの作成
 resource "aws_codebuild_project" "build_project" {
   name          = "s3-deploy-build"
   service_role  = module.codebuild_iam_role.role_arn
@@ -25,7 +24,7 @@ resource "aws_codebuild_project" "build_project" {
 
   source {
     type      = "CODEPIPELINE"
-    buildspec = file("../buildspec/buildspec.yml")  # ビルドプロセスが必要な場合
+    buildspec = file("../buildspec/buildspec.yml")
   }
 }
 
@@ -59,7 +58,7 @@ resource "aws_codepipeline" "my_pipeline" {
     }
   }
 
-  # （オプション）ビルドステージが必要な場合
+  # ビルドステージでZIPを作成
   stage {
     name = "Build"
     action {
@@ -77,21 +76,25 @@ resource "aws_codepipeline" "my_pipeline" {
     }
   }
 
-  # S3にデプロイするステージ
+  # 複数のLambda用のZIPをS3にデプロイするステージ
   stage {
     name = "Deploy"
-    action {
-      name             = "S3_Deploy"
-      category         = "Deploy"
-      owner            = "AWS"
-      provider         = "S3"
-      version          = "1"
-      input_artifacts  = ["build_output"]  # ビルドステージがない場合はsource_output
-      configuration = {
-        BucketName = aws_s3_bucket.codepipeline_deploy.bucket
-        Extract    = "true"
+
+    dynamic "action" {
+      for_each = var.lambda_functions
+      content {
+        name             = "S3_Deploy_${action.value.name}"
+        category         = "Deploy"
+        owner            = "AWS"
+        provider         = "S3"
+        version          = "1"
+        input_artifacts  = ["build_output"]
+        configuration = {
+          BucketName  = aws_s3_bucket.codepipeline_deploy.bucket
+          Extract     = "false"
+          ObjectKey   = "${action.value.name}.zip"  # 各関数のZIPファイル名を動的に設定
+        }
       }
     }
   }
 }
-
