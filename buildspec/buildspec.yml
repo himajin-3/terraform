@@ -5,16 +5,17 @@ phases:
     commands:
       - echo "Installing dependencies..."
       - echo "Cloning GitHub repository..."
-      - git clone https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}.git
+      - git clone https://${GITHUB_TOKEN}@github.com/${GITHUB_OWNER}/${GITHUB_REPO}.git
   build:
     commands:
       - echo "Building Lambda functions..."
-      - for function_path in ./your_repo_directory/lambda_functions/*; do \
-          function_name=$(basename $$function_path); \
-          echo "Building $$function_name..."; \
-          cd $$function_path && zip -r ../../$$function_name.zip . && cd ../..; \
+      - |
+        for function_path in ./${GITHUB_REPO}/lambda_functions/*; do
+          function_name=$(basename "$function_path")
+          echo "Building $function_name..."
+          cd "$function_path" && zip -r "../../$function_name.zip" . && cd ../..
         done
 
 artifacts:
   files:
-    - '*.zip'  # すべてのZIPファイルを出力
+    - '*.zip'  # すべてのZIPファイルをアーティファクトとして出力

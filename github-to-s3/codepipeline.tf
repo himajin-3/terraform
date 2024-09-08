@@ -17,9 +17,24 @@ resource "aws_codebuild_project" "build_project" {
   }
 
   environment {
-    compute_type                = "BUILD_GENERAL1_SMALL"
-    image                       = "aws/codebuild/standard:5.0"
-    type                        = "LINUX_CONTAINER"
+    compute_type   = "BUILD_GENERAL1_SMALL"
+    image          = "aws/codebuild/standard:5.0"
+    type           = "LINUX_CONTAINER"
+
+    environment_variable {
+      name  = "GITHUB_TOKEN"
+      value = var.github_token  # GitHubのアクセストークン
+    }
+
+    environment_variable {
+      name  = "GITHUB_OWNER"
+      value = var.github_owner  # GitHubのオーナー名
+    }
+
+    environment_variable {
+      name  = "GITHUB_REPO"
+      value = var.github_repo  # GitHubのリポジトリ名
+    }
   }
 
   source {
@@ -76,25 +91,41 @@ resource "aws_codepipeline" "my_pipeline" {
     }
   }
 
-  # 複数のLambda用のZIPをS3にデプロイするステージ
-  stage {
-    name = "Deploy"
+  # S3にデプロイするステージ
+stage {
+  name = "Deploy"
 
-    dynamic "action" {
-      for_each = var.lambda_functions
-      content {
-        name             = "S3_Deploy_${action.value.name}"
-        category         = "Deploy"
-        owner            = "AWS"
-        provider         = "S3"
-        version          = "1"
-        input_artifacts  = ["build_output"]
-        configuration = {
-          BucketName  = aws_s3_bucket.codepipeline_deploy.bucket
-          Extract     = "false"
-          ObjectKey   = "${action.value.name}.zip"  # 各関数のZIPファイル名を動的に設定
-        }
+  # デフォルトの静的なアクションブロック
+  action {
+    name             = "S3_Deploy_Default"
+    category         = "Deploy"
+    owner            = "AWS"
+    provider         = "S3"
+    version          = "1"
+    input_artifacts  = ["build_output"]
+    configuration = {
+      BucketName  = aws_s3_bucket.codepipeline_deploy.bucket
+      Extract     = "false"
+      ObjectKey   = "default.zip"  # デフォルトのS3オブジェクトキー
+    }
+  }
+
+  # 動的にアクションを定義する
+  dynamic "action" {
+    for_each = { for function in fileset("./lambda_functions", "*.zip") : function => function }
+    content {
+      name             = "S3_Deploy_${function.key}"
+      category         = "Deploy"
+      owner            = "AWS"
+      provider         = "S3"
+      version          = "1"
+      input_artifacts  = ["build_output"]
+      configuration = {
+        BucketName  = aws_s3_bucket.codepipeline_deploy.bucket
+        Extract     = "false"
+        ObjectKey   = "${function.key}.zip"  # Lambda関数名に基づいたZIPファイル名をS3にアップロード
       }
     }
   }
+}
 }

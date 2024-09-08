@@ -23,3 +23,4 @@ variable "github_token" {
   type        = string
   sensitive   = true  # センシティブな情報として扱う
 }
+
